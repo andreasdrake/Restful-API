@@ -58,6 +58,8 @@ namespace Library.API
         {
             loggerFactory.AddConsole();
 
+            loggerFactory.AddDebug();
+
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
