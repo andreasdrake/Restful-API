@@ -75,8 +75,9 @@ namespace Library.API.Services
             //    .ThenBy(a => a.LastName).AsQueryable();
 
             IQueryable<Author> collectionBeforePaging = _context.Authors
-                .ApplySort(authorsResourceParameters.OrderBy,
-                _propertyMappingService.GetPropertyMapping<AuthorDto, Author>() );
+                .ApplySort(
+                    authorsResourceParameters.OrderBy,
+                    _propertyMappingService.GetPropertyMapping<AuthorDto, Author>());
                 
 
             if (!string.IsNullOrWhiteSpace(authorsResourceParameters.Genre))

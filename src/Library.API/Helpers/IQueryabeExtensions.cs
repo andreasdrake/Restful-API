@@ -27,17 +27,42 @@ namespace Library.API.Helpers
                 return source;
             }
 
-            string[] orderByAfterSplt = orderBy.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+            string[] orderByAfterSplit = orderBy.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
 
-            foreach (string orderByClause in orderByAfterSplt)
+            foreach (string orderByClause in orderByAfterSplit.Reverse())
             {
                 string trimmedOrderByClause = orderByClause.Trim();
 
                 bool orderDescending = trimmedOrderByClause.EndsWith(" desc");
 
-                
+                int indexOfFirstSpace = trimmedOrderByClause.IndexOf(" ");
 
+                string propertyName = indexOfFirstSpace == -1 ? trimmedOrderByClause : trimmedOrderByClause.Remove(indexOfFirstSpace);
+
+                if (!mappingDictionary.ContainsKey(propertyName))
+                {
+                    throw new Exception($"Key mapping for {propertyName} is missing.");
+                }
+
+                PropertyMappingValue propertyMappingValue = mappingDictionary[propertyName];
+
+                if (propertyMappingValue == null)
+                {
+                    throw new ArgumentNullException(nameof(propertyMappingValue));
+                }
+
+                foreach (string destinationProperty in propertyMappingValue.DestinationProperties.Reverse())
+                {
+                    if (propertyMappingValue.Revert)
+                    {
+                        orderDescending = !orderDescending;
+                    }
+
+                    source = source.OrderBy(destinationProperty + (orderDescending ? " descending" : " ascending"));
+                }
             }
+
+            return source;
         }
     }
 }

@@ -36,5 +36,33 @@ namespace Library.API.Services
 
             throw new Exception($"Cannot find exact property mapping for <{typeof(TSource)}, {typeof(TDestination)}>.");
         }
+
+        public bool ValidMappingExistsFor<TSource, TDestination>(string fields)
+        {
+            var propertyMapping = GetPropertyMapping<TSource, TDestination>();
+
+            if (string.IsNullOrWhiteSpace(fields))
+            {
+                return true;
+            }
+
+            string[] fieldsAfterSplit = fields.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+
+            foreach (string field in fieldsAfterSplit)
+            {
+                var trimmedField = field.Trim();
+
+                int indexOfFirstSpace = trimmedField.IndexOf(" ");
+
+                string propertyName = indexOfFirstSpace == -1 ? trimmedField : trimmedField.Remove(indexOfFirstSpace);
+
+                if (!propertyMapping.ContainsKey(propertyName))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
     }
 }
