@@ -19,14 +19,17 @@ namespace Library.API.Controllers
         private readonly ILibraryRepository _libraryRepository;
         private readonly IUrlHelper _urlHelper;
         private readonly IPropertyMappingService _propertyMappingService;
+        private readonly ITypeHelperService _typeHelperService;
 
         public AuthorsControllers(ILibraryRepository libraryRepository, 
             IUrlHelper urlHelper, 
-            IPropertyMappingService propertyMappingService)
+            IPropertyMappingService propertyMappingService,
+            ITypeHelperService typeHelperService)
         {
             _libraryRepository = libraryRepository;
             _urlHelper = urlHelper;
             _propertyMappingService = propertyMappingService;
+            _typeHelperService = typeHelperService;
         }
 
 
@@ -34,6 +37,11 @@ namespace Library.API.Controllers
         public IActionResult GetAuthors(AuthorsResourceParameters authorsResourceParameters)
         {
             if (!_propertyMappingService.ValidMappingExistsFor<AuthorDto, Author>(authorsResourceParameters.OrderBy))
+            {
+                return BadRequest();
+            }
+
+            if (!_typeHelperService.TypeHasProperties<AuthorDto>(authorsResourceParameters.Fields))
             {
                 return BadRequest();
             }
@@ -59,7 +67,7 @@ namespace Library.API.Controllers
             Response.Headers.Add("X-Pagination", Newtonsoft.Json.JsonConvert.SerializeObject(paginationMetadata));
 
             var authors = Mapper.Map<IEnumerable<AuthorDto>>(authorsFromRepo);
-            return Ok(authors);
+            return Ok(authors.ShapeData(authorsResourceParameters.Fields));
         }
         private string CreateAuthorsResourceUri(AuthorsResourceParameters authorsResourceParameters,
             ResourceUriType type)
@@ -73,7 +81,8 @@ namespace Library.API.Controllers
                         pageSize = authorsResourceParameters.PageSize,
                         genre = authorsResourceParameters.Genre,
                         searchQuery = authorsResourceParameters.SearchQuery,
-                        orderBy = authorsResourceParameters.OrderBy
+                        orderBy = authorsResourceParameters.OrderBy,
+                        fields = authorsResourceParameters.Fields
                     });
                 case ResourceUriType.NextPage:
                     return _urlHelper.Link("GetAuthors", new
@@ -82,7 +91,8 @@ namespace Library.API.Controllers
                         pageSize = authorsResourceParameters.PageSize,
                         genre = authorsResourceParameters.Genre,
                         searchQuery = authorsResourceParameters.SearchQuery,
-                        orderBy = authorsResourceParameters.OrderBy
+                        orderBy = authorsResourceParameters.OrderBy,
+                        fields = authorsResourceParameters.Fields
                     });
                 default:
                     return _urlHelper.Link("GetAuthors", new
@@ -91,7 +101,8 @@ namespace Library.API.Controllers
                         pageSize = authorsResourceParameters.PageSize,
                         genre = authorsResourceParameters.Genre,
                         searchQuery = authorsResourceParameters.SearchQuery,
-                        orderBy = authorsResourceParameters.OrderBy
+                        orderBy = authorsResourceParameters.OrderBy,
+                        fields = authorsResourceParameters.Fields
                     });
             }
         }

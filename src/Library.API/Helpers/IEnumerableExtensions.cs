@@ -2,9 +2,6 @@
 using System.Collections.Generic;
 using System.Dynamic;
 using System.Reflection;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Library.API.Helpers
 {
@@ -43,10 +40,36 @@ namespace Library.API.Helpers
 
                 foreach (string field in fieldsAfterSplit)
                 {
+                    string propertyName = field.Trim();
 
+                    var propertyInfo = typeof(TSource).GetProperty(propertyName, BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance);
+
+                    if (propertyInfo == null)
+                    {
+                        throw new Exception($"Property {propertyName} wasn't found on {typeof(TSource)}");
+                    }
+
+                    propertyInfoList.Add(propertyInfo);
                 }
             }
+
+            // run through the source objects
+            foreach (TSource sourceObject in source)
+            {
+                var dataShapeObject = new ExpandoObject();
+
+                foreach (PropertyInfo propertyInfo in propertyInfoList)
+                {
+                    var propertyValue = propertyInfo.GetValue(sourceObject);
+
+                    dataShapeObject.TryAdd(propertyInfo.Name, propertyValue);
+                }
+
+                expandoObjectList.Add(dataShapeObject);
+            }
+
+            return expandoObjectList;
         }
-        
+
     }
 }
