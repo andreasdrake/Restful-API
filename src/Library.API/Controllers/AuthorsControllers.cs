@@ -69,43 +69,7 @@ namespace Library.API.Controllers
             var authors = Mapper.Map<IEnumerable<AuthorDto>>(authorsFromRepo);
             return Ok(authors.ShapeData(authorsResourceParameters.Fields));
         }
-        private string CreateAuthorsResourceUri(AuthorsResourceParameters authorsResourceParameters,
-            ResourceUriType type)
-        {
-            switch (type)
-            {
-                case ResourceUriType.PreviousPage:
-                    return _urlHelper.Link("GetAuthors", new
-                    {
-                        pageNumber = authorsResourceParameters.PageNumber - 1,
-                        pageSize = authorsResourceParameters.PageSize,
-                        genre = authorsResourceParameters.Genre,
-                        searchQuery = authorsResourceParameters.SearchQuery,
-                        orderBy = authorsResourceParameters.OrderBy,
-                        fields = authorsResourceParameters.Fields
-                    });
-                case ResourceUriType.NextPage:
-                    return _urlHelper.Link("GetAuthors", new
-                    {
-                        pageNumber = authorsResourceParameters.PageNumber + 1,
-                        pageSize = authorsResourceParameters.PageSize,
-                        genre = authorsResourceParameters.Genre,
-                        searchQuery = authorsResourceParameters.SearchQuery,
-                        orderBy = authorsResourceParameters.OrderBy,
-                        fields = authorsResourceParameters.Fields
-                    });
-                default:
-                    return _urlHelper.Link("GetAuthors", new
-                    {
-                        pageNumber = authorsResourceParameters.PageNumber,
-                        pageSize = authorsResourceParameters.PageSize,
-                        genre = authorsResourceParameters.Genre,
-                        searchQuery = authorsResourceParameters.SearchQuery,
-                        orderBy = authorsResourceParameters.OrderBy,
-                        fields = authorsResourceParameters.Fields
-                    });
-            }
-        }
+     
 
         [HttpGet("{id}", Name ="GetAuthor")]
         public IActionResult GetAuthor(Guid id, [FromQuery]string fields)
@@ -175,5 +139,37 @@ namespace Library.API.Controllers
 
             return NoContent();
         }
+
+
+        #region Private Methods
+        private string CreateAuthorsResourceUri(AuthorsResourceParameters authorsResourceParameters,
+         ResourceUriType type)
+        {
+            int pageNumber = authorsResourceParameters.PageNumber;
+
+            switch (type)
+            {
+                case ResourceUriType.PreviousPage:
+                    pageNumber--;
+                    break;
+                case ResourceUriType.NextPage:
+                    pageNumber++;
+                    break;
+                default:
+                    break;
+            }
+
+            return _urlHelper.Link("GetAuthors", new
+            {
+                pageNumber = pageNumber,
+                pageSize = authorsResourceParameters.PageSize,
+                genre = authorsResourceParameters.Genre,
+                searchQuery = authorsResourceParameters.SearchQuery,
+                orderBy = authorsResourceParameters.OrderBy,
+                fields = authorsResourceParameters.Fields
+            });
+        }
+
+        #endregion
     }
 }
