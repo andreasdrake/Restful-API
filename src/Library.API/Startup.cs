@@ -20,12 +20,21 @@ using Microsoft.AspNetCore.Mvc.Routing;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Newtonsoft.Json.Serialization;
 
+//https://docs.microsoft.com/en-us/aspnet/core/migration/1x-to-2x/
 namespace Library.API
 {
     public class Startup
     {
-        public static IConfigurationRoot Configuration;
+        public static IConfiguration Configuration;
 
+
+        public Startup(IConfiguration configuration)
+        {
+
+            Configuration = configuration;
+        }
+
+        //Asp.Net Core 1.x
         public Startup(IHostingEnvironment env)
         {
             var builder = new ConfigurationBuilder()
