@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Configuration;
 
 namespace Library.API
 {
@@ -18,6 +19,16 @@ namespace Library.API
 
         public static IWebHost BuildWebHost(string[] args) =>
          WebHost.CreateDefaultBuilder(args)
+            .UseKestrel()
+            .UseContentRoot(Directory.GetCurrentDirectory())
+            .ConfigureAppConfiguration((builderContext, config) => 
+            {
+                IHostingEnvironment env = builderContext.HostingEnvironment;
+
+                config.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+                    .AddJsonFile($"appsettings.{env.EnvironmentName}.json", optional: true, reloadOnChange: true);
+            })
+            .UseIISIntegration()
             .UseStartup<Startup>()
             .Build();
 
