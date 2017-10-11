@@ -22,8 +22,8 @@ namespace Library.API.Controllers
         private readonly IPropertyMappingService _propertyMappingService;
         private readonly ITypeHelperService _typeHelperService;
 
-        public AuthorsControllers(ILibraryRepository libraryRepository, 
-            IUrlHelper urlHelper, 
+        public AuthorsControllers(ILibraryRepository libraryRepository,
+            IUrlHelper urlHelper,
             IPropertyMappingService propertyMappingService,
             ITypeHelperService typeHelperService)
         {
@@ -36,7 +36,7 @@ namespace Library.API.Controllers
 
         [HttpGet(Name = "GetAuthors")]
         public IActionResult GetAuthors(AuthorsResourceParameters authorsResourceParameters,
-            [FromHeader(Name ="Accept")] string mediaType)
+            [FromHeader(Name = "Accept")] string mediaType)
         {
             if (!_propertyMappingService.ValidMappingExistsFor<AuthorDto, Author>(authorsResourceParameters.OrderBy))
             {
@@ -50,17 +50,12 @@ namespace Library.API.Controllers
 
             var authorsFromRepo = _libraryRepository.GetAuthors(authorsResourceParameters);
 
-           
+
             var authors = Mapper.Map<IEnumerable<AuthorDto>>(authorsFromRepo);
 
             if (mediaType == "application/vnd.marvin.hateoas+json")
             {
 
-                //var previousPageLink = authorsFromRepo.HasPrevious ?
-                //    CreateAuthorsResourceUri(authorsResourceParameters, ResourceUriType.PreviousPage) : null;
-
-                //var nextPageLink = authorsFromRepo.HasNext ?
-                //    CreateAuthorsResourceUri(authorsResourceParameters, ResourceUriType.NextPage) : null;
 
                 var paginationMetadata = new
                 {
@@ -68,8 +63,6 @@ namespace Library.API.Controllers
                     pageSize = authorsFromRepo.PageSize,
                     currentPage = authorsFromRepo.CurrentPage,
                     totalPages = authorsFromRepo.TotalPages,
-                    //previousPageLink = previousPageLink,
-                    //nextPageLink = nextPageLink
                 };
 
                 Response.Headers.Add("X-Pagination", Newtonsoft.Json.JsonConvert.SerializeObject(paginationMetadata));
@@ -119,9 +112,9 @@ namespace Library.API.Controllers
 
                 return Ok(authors.ShapeData(authorsResourceParameters.Fields));
             }
-        }     
+        }
 
-        [HttpGet("{id}", Name ="GetAuthor")]
+        [HttpGet("{id}", Name = "GetAuthor")]
         public IActionResult GetAuthor(Guid id, [FromQuery]string fields)
         {
             if (!_typeHelperService.TypeHasProperties<AuthorDto>(fields))
@@ -147,6 +140,8 @@ namespace Library.API.Controllers
         }
 
         [HttpPost(Name = "CreateAuthor")]
+        [RequestHeaderMatchesMediaType("Content-Type", 
+            new[] { "application/vnd.marvin.author.full+json" })]
         public IActionResult CreateAuthor([FromBody]AuthorForCreationDto author)
         {
             if (author == null)
@@ -171,6 +166,37 @@ namespace Library.API.Controllers
 
             return CreatedAtRoute("GetAuthor", 
                 new { id = linkedResourceToReturn["Id"]}, linkedResourceToReturn);
+        }
+
+        [HttpPost(Name = "CreateAuthorWithDateOfDeath")]
+        [RequestHeaderMatchesMediaType("Content-Type",
+            new[] { "application/vnd.marvin.authorwithdateofdeath.full+json",
+                    "application/vnd.marvin.authorwithdateofdeath.full+xml"})]
+       // [RequestHeaderMatchesMediaType("Accept", new[] { "" })]
+        public IActionResult CreateAuthorWithDateOfDeath([FromBody]AuthorForCreationWithDateOfDeathDto author)
+        {
+            if (author == null)
+            {
+                return BadRequest();
+            }
+
+            var authorEntity = Mapper.Map<Author>(author);
+
+            _libraryRepository.AddAuthor(authorEntity);
+            if (!_libraryRepository.Save())
+            {
+                throw new Exception("Creating an author failed on save.");
+            }
+
+            var authorToReturn = Mapper.Map<AuthorDto>(authorEntity);
+
+            var links = CreateLinksForAuthor(authorToReturn.Id, null);
+
+            var linkedResourceToReturn = authorToReturn.ShapeData(null) as IDictionary<string, object>;
+            linkedResourceToReturn.Add("links", links);
+
+            return CreatedAtRoute("GetAuthor",
+                new { id = linkedResourceToReturn["Id"] }, linkedResourceToReturn);
         }
 
         [HttpPost("{id}")]

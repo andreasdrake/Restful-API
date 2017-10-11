@@ -52,9 +52,22 @@ namespace Library.API
         {
             services.AddMvc(setupAction =>
             {
-                setupAction.ReturnHttpNotAcceptable = true;
-                setupAction.OutputFormatters.Add(new XmlDataContractSerializerOutputFormatter());
-                setupAction.InputFormatters.Add(new XmlDataContractSerializerInputFormatter());
+            setupAction.ReturnHttpNotAcceptable = true;
+            setupAction.OutputFormatters.Add(new XmlDataContractSerializerOutputFormatter());
+                
+                var xmlDataContractSerializerInputFormatter = new XmlDataContractSerializerInputFormatter();
+                xmlDataContractSerializerInputFormatter.SupportedMediaTypes.Add(
+                "application/vnd.marvin.authorwithdateofdeath.full+xml");
+                setupAction.InputFormatters.Add(xmlDataContractSerializerInputFormatter);
+
+                var jsonInputFormatter = setupAction.InputFormatters.OfType<JsonInputFormatter>().FirstOrDefault();
+
+                if (jsonInputFormatter != null)
+                {
+                    jsonInputFormatter.SupportedMediaTypes.Add("application/vnd.marvin.author.full+json");
+                    jsonInputFormatter.SupportedMediaTypes.Add("application/vnd.marvin.authorwithdateofdeath.full+json");
+
+                }
 
                 var jsonOutputFormatter = setupAction.OutputFormatters.OfType<JsonOutputFormatter>().FirstOrDefault();
 
@@ -85,6 +98,16 @@ namespace Library.API
 
             services.AddTransient<IPropertyMappingService, PropertyMappingService>();
             services.AddTransient<ITypeHelperService, TypeHelperService>();
+
+            services.AddHttpCacheHeaders(
+                experiationModelOptions => 
+                {
+                    experiationModelOptions.MaxAge = 600;
+                }, 
+                validationModelOptions =>
+                {
+                    validationModelOptions.AddMustRevalidate = true;
+                });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -123,12 +146,16 @@ namespace Library.API
             AutoMapper.Mapper.Initialize(cfg =>
             {
                 cfg.CreateMap<Entities.Author, Models.AuthorDto>()
-                    .ForMember(dest => dest.Name, opt => opt.MapFrom(src =>$"{src.FirstName} {src.LastName}"))
-                    .ForMember(dest => dest.Age, opt => opt.MapFrom(src => src.DateOfBirth.GetCurrentAge()));
+                    .ForMember(dest => dest.Name, opt => 
+                    opt.MapFrom(src =>$"{src.FirstName} {src.LastName}"))
+                    .ForMember(dest => dest.Age, 
+                    opt => opt.MapFrom(src => src.DateOfBirth.GetCurrentAge(src.DateOfDeath)));
 
                 cfg.CreateMap<Entities.Book, Models.BookDto>();
 
                 cfg.CreateMap<Models.AuthorForCreationDto, Entities.Author>();
+
+                cfg.CreateMap<Models.AuthorForCreationWithDateOfDeathDto, Entities.Author>();
 
                 cfg.CreateMap<Models.BookForCreationDto, Entities.Book>();
 
@@ -137,9 +164,12 @@ namespace Library.API
                 cfg.CreateMap<Entities.Book, Models.BookForUpdateDto>();
             });
 
+            libraryContext.Database.Migrate();
             libraryContext.EnsureSeedDataForContext();
 
-            app.UseMvc(); 
+            app.UseHttpCacheHeaders();
+
+            app.UseMvc();
         }
     }
 }

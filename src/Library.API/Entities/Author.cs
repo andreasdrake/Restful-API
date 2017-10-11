@@ -20,8 +20,8 @@ namespace Library.API.Entities
         [Required]
         public DateTimeOffset DateOfBirth { get; set; }
 
-        //[Required]
-        //public DateTimeOffset? DateOfDeath { get; set; }
+        public DateTimeOffset? DateOfDeath { get; set; }
+
 
         [Required]
         [MaxLength(50)]

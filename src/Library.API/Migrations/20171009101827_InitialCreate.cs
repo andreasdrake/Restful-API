@@ -1,9 +1,10 @@
 ﻿using Microsoft.EntityFrameworkCore.Migrations;
 using System;
+using System.Collections.Generic;
 
 namespace Library.API.Migrations
 {
-    public partial class InitialMigration : Migration
+    public partial class InitialCreate : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
@@ -11,11 +12,11 @@ namespace Library.API.Migrations
                 name: "Authors",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(nullable: false),
-                    DateOfBirth = table.Column<DateTimeOffset>(nullable: false),
-                    FirstName = table.Column<string>(maxLength: 50, nullable: false),
-                    Genre = table.Column<string>(maxLength: 50, nullable: false),
-                    LastName = table.Column<string>(maxLength: 50, nullable: false)
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    DateOfBirth = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    FirstName = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    Genre = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    LastName = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false)
                 },
                 constraints: table =>
                 {
@@ -26,10 +27,10 @@ namespace Library.API.Migrations
                 name: "Books",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(nullable: false),
-                    AuthorId = table.Column<Guid>(nullable: false),
-                    Description = table.Column<string>(maxLength: 500, nullable: true),
-                    Title = table.Column<string>(maxLength: 100, nullable: false)
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    AuthorId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Description = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    Title = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false)
                 },
                 constraints: table =>
                 {
