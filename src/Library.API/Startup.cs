@@ -19,6 +19,9 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Routing;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Newtonsoft.Json.Serialization;
+using Microsoft.Net.Http.Headers;
+using AspNetCoreRateLimit;
+using Swashbuckle.AspNetCore.Swagger;
 
 //https://docs.microsoft.com/en-us/aspnet/core/migration/1x-to-2x/
 namespace Library.API
@@ -50,10 +53,12 @@ namespace Library.API
         // For more information on how to configure your application, visit http://go.microsoft.com/fwlink/?LinkID=398940
         public void ConfigureServices(IServiceCollection services)
         {
+            //services.AddResponseCaching();
+
             services.AddMvc(setupAction =>
             {
-            setupAction.ReturnHttpNotAcceptable = true;
-            setupAction.OutputFormatters.Add(new XmlDataContractSerializerOutputFormatter());
+                setupAction.ReturnHttpNotAcceptable = true;
+                setupAction.OutputFormatters.Add(new XmlDataContractSerializerOutputFormatter());
                 
                 var xmlDataContractSerializerInputFormatter = new XmlDataContractSerializerInputFormatter();
                 xmlDataContractSerializerInputFormatter.SupportedMediaTypes.Add(
@@ -108,6 +113,41 @@ namespace Library.API
                 {
                     validationModelOptions.AddMustRevalidate = true;
                 });
+
+            services.AddMemoryCache();
+
+            services.Configure<IpRateLimitOptions>(options =>
+            {
+                options.GeneralRules = new List<RateLimitRule>
+                {
+                    new RateLimitRule
+                    {
+                        Endpoint = "*",
+                        Limit = 1000,
+                        Period="5m"
+                    },
+                    new RateLimitRule
+                    {
+                        Endpoint = "*",
+                        Limit = 2,
+                        Period="10s"
+                    }
+                };
+            });
+
+
+            services.AddSingleton<IRateLimitCounterStore, MemoryCacheRateLimitCounterStore>();
+            services.AddSingleton<IIpPolicyStore, MemoryCacheIpPolicyStore>();
+
+            services.AddSwaggerGen(options =>
+            {
+                options.SwaggerDoc("v1",
+                    new Info
+                    {
+                        Title = "Library API Documentation",
+                        Version="v1"
+                    });
+            });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -167,9 +207,32 @@ namespace Library.API
             libraryContext.Database.Migrate();
             libraryContext.EnsureSeedDataForContext();
 
+            //app.UseResponseCaching();
+            //app.Run(async (context) =>
+            //{
+            //    context.Response.GetTypedHeaders().CacheControl = new Microsoft.Net.Http.Headers.CacheControlHeaderValue()
+            //    {
+            //        Public = true,
+            //        MaxAge = TimeSpan.FromSeconds(10)
+            //    };
+            //    context.Response.Headers[HeaderNames.Vary] = new string[] { "Accept-Encoding" };
+
+            //});
+
+            app.UseIpRateLimiting();
+
             app.UseHttpCacheHeaders();
 
+          
+            app.UseSwagger();
+
+            app.UseSwaggerUI(options =>
+            {
+                options.SwaggerEndpoint("/swagger/v1/swagger.json", "Library API V1");
+            });
+
             app.UseMvc();
+
         }
     }
 }

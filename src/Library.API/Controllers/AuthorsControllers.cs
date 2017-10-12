@@ -35,6 +35,7 @@ namespace Library.API.Controllers
 
 
         [HttpGet(Name = "GetAuthors")]
+        [HttpHead]
         public IActionResult GetAuthors(AuthorsResourceParameters authorsResourceParameters,
             [FromHeader(Name = "Accept")] string mediaType)
         {
@@ -55,13 +56,10 @@ namespace Library.API.Controllers
 
             if (mediaType == "application/vnd.marvin.hateoas+json")
             {
-
-
                 var paginationMetadata = new
                 {
                     totalCount = authorsFromRepo.TotalCount,
                     pageSize = authorsFromRepo.PageSize,
-                    currentPage = authorsFromRepo.CurrentPage,
                     totalPages = authorsFromRepo.TotalPages,
                 };
 
@@ -115,7 +113,8 @@ namespace Library.API.Controllers
         }
 
         [HttpGet("{id}", Name = "GetAuthor")]
-        public IActionResult GetAuthor(Guid id, [FromQuery]string fields)
+        public IActionResult GetAuthor(Guid id, [FromQuery]string fields,
+            [FromHeader(Name = "Accept")] string mediaType)
         {
             if (!_typeHelperService.TypeHasProperties<AuthorDto>(fields))
             {
@@ -227,6 +226,14 @@ namespace Library.API.Controllers
             }
 
             return NoContent();
+        }
+
+        [HttpOptions]
+        public IActionResult GetAuthorsOptions()
+        {
+            Response.Headers.Add("Allow", "GET,OPTIONS,POST");
+
+            return Ok();
         }
 
 
